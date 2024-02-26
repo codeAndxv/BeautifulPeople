@@ -1,78 +1,90 @@
 package com.dudu.beautifulpeople;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.media.projection.MediaProjectionManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.os.Bundle;
-import android.os.Environment;
-import android.text.format.DateFormat;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
+import com.dudu.beautifulpeople.service.ScreenRecordService;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Date;
-import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
-    public final String saveImagePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath() + File.separator + "screenshot";
-    private Button btnTakeScreenshot;
+/**
+ * @author by talon, Date on 19/6/23.
+ * note:
+ */
+public class MainActivity extends Activity {
+    private static final int REQUEST_CODE = 1;
+    private MediaProjectionManager mMediaProjectionManager;
 
-    Random random = new Random();
-    private static final int REQUEST_PERMISSION_CODE = 123;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 在 onCreate() 中调用 checkPermissions() 方法，检查权限
-        checkPermissions();
-        btnTakeScreenshot = findViewById(R.id.btnTakeScreenshot);
-        btnTakeScreenshot.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            }
-        });
-        startService(new Intent(this, ScreenshotService.class));
+        checkPermission(this); //检查权限
+
+        mMediaProjectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
     }
 
-    // 新方法用于检查权限
-    private void checkPermissions() {
-        String[] permissions = {Manifest.permission.INTERNET, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    public void StartRecorder(View view) {
+        createScreenCapture();
+    }
 
-        if (!checkPermission(this, Manifest.permission.INTERNET) ||
-                !checkPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) ||
-                !checkPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION_CODE);
-        } else {
-            // 权限已授予，继续执行相应操作
+    public void StopRecorder(View view){
+        Intent service = new Intent(this, ScreenRecordService.class);
+        stopService(service);
+    }
+
+
+    public static void checkPermission(Activity activity) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            int checkPermission =
+                    ContextCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO)
+                            + ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_PHONE_STATE)
+                            + ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            + ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE);
+            if (checkPermission != PackageManager.PERMISSION_GRANTED) {
+                //动态申请
+                ActivityCompat.requestPermissions(activity, new String[]{
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.READ_PHONE_STATE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, 123);
+            }
         }
     }
 
-    private boolean checkPermission(Context context, String permission) {
-        int result = ContextCompat.checkSelfPermission(context, permission);
-        return result == PackageManager.PERMISSION_GRANTED;
+
+    private void createScreenCapture() {
+        Intent captureIntent = mMediaProjectionManager.createScreenCaptureIntent();
+        startActivityForResult(captureIntent, REQUEST_CODE);
     }
 
-    // 处理权限请求结果
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUEST_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 权限已授予，继续执行相应操作
-            } else {
-                // 权限被拒绝，根据需要进行处理
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            try {
+                Toast.makeText(this, "允许录屏", Toast.LENGTH_SHORT).show();
+
+                Intent service = new Intent(this, ScreenRecordService.class);
+                service.putExtra("resultCode", resultCode);
+                service.putExtra("data", data);
+                startService(service);
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        } else {
+            Toast.makeText(this, "拒绝录屏", Toast.LENGTH_SHORT).show();
         }
     }
 
