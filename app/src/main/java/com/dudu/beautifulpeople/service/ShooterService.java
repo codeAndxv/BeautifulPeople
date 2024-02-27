@@ -87,7 +87,7 @@ public class ShooterService extends Service {
                 mWidth,
                 mHeight,
                 PixelFormat.RGBA_8888,//this is necessary to equal buffer format in #copyPixelsFromBuffer.
-                2);
+                5);
 
         mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
 
@@ -142,8 +142,6 @@ public class ShooterService extends Service {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
         }
     }
 
@@ -154,7 +152,7 @@ public class ShooterService extends Service {
                 mWidth,
                 mHeight,
                 Resources.getSystem().getDisplayMetrics().densityDpi,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 mImageReader.getSurface(), null, null
         );
     }
