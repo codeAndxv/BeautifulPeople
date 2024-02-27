@@ -21,12 +21,15 @@ import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
+import com.dudu.beautifulpeople.MainActivity;
 import com.dudu.beautifulpeople.R;
 import com.dudu.beautifulpeople.utils.ScreenUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author by talon, Date on 19/6/23.
@@ -55,6 +58,8 @@ public class ScreenRecordService extends Service {
     private MediaRecorder mMediaRecorder;
     private VirtualDisplay mVirtualDisplay;
 
+    private String directoryPath;
+
     public ScreenRecordService() {
     }
 
@@ -72,20 +77,59 @@ public class ScreenRecordService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startForeground(1, new Notification()); // 使用空的通知作为示例
-        mResultCode = intent.getIntExtra("resultCode", 1);
+        // 好像必须要创建通知
+        createNotificationChannel();
+
+        mResultCode = intent.getIntExtra("code", -1);
         mResultData = intent.getParcelableExtra("data");
+        //mResultData = intent.getSelector();
+        mMediaProjection = createMediaProjection();
+        //mMediaProjection =  ((MediaProjectionManager) Objects.requireNonNull(getSystemService(Context.MEDIA_PROJECTION_SERVICE))).getMediaProjection(mResultCode, mResultData);
+        Log.e(TAG, "mMediaProjection created: " + mMediaProjection);
 
         getScreenBaseInfo();
+        directoryPath = intent.getStringExtra("directoryPath");
+        File file = new File(directoryPath);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
 
-        mMediaProjection = createMediaProjection();
         mMediaRecorder = createMediaRecorder();
         mVirtualDisplay = createVirtualDisplay(); // 必须在mediaRecorder.prepare() 之后调用，否则报错"fail to get surface"
 
         mMediaRecorder.start();
-        return Service.START_NOT_STICKY;
+
+        return super.onStartCommand(intent, flags, startId);
     }
 
+
+    private void createNotificationChannel() {
+        Notification.Builder builder = new Notification.Builder(this.getApplicationContext()); //获取一个Notification构造器
+        Intent nfIntent = new Intent(this, MainActivity.class); //点击后跳转的界面，可以设置跳转数据
+
+        builder.setContentIntent(PendingIntent.getActivity(this, 0, nfIntent, 0)) // 设置PendingIntent
+                .setLargeIcon(BitmapFactory.decodeResource(this.getResources(), R.mipmap.ic_launcher)) // 设置下拉列表中的图标(大图标)
+                //.setContentTitle("SMI InstantView") // 设置下拉列表里的标题
+                .setSmallIcon(R.mipmap.ic_launcher) // 设置状态栏内的小图标
+                .setContentText("is running......") // 设置上下文内容
+                .setWhen(System.currentTimeMillis()); // 设置该通知发生的时间
+
+        /*以下是对Android 8.0的适配*/
+        //普通notification适配
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId("notification_id");
+        }
+        //前台服务notification适配
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+            NotificationChannel channel = new NotificationChannel("notification_id", "notification_name", NotificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        Notification notification = builder.build(); // 获取构建好的Notification
+        notification.defaults = Notification.DEFAULT_SOUND; //设置为默认的声音
+        startForeground(110, notification);
+    }
 
     public void startNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -106,7 +150,6 @@ public class ScreenRecordService extends Service {
             startForeground(1, notification); //必须使用此方法显示通知，不能使用notificationManager.notify，否则还是会报上面的错误
         }
     }
-
 
 
     @Override
@@ -158,7 +201,8 @@ public class ScreenRecordService extends Service {
 //        if(isAudio) mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setOutputFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) + "/" + videoQuality + curTime + ".mp4");
+
+        mediaRecorder.setOutputFile(directoryPath + "/" + videoQuality + curTime + ".mp4");
         mediaRecorder.setVideoSize(mScreenWidth, mScreenHeight);  //after setVideoSource(), setOutFormat()
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);  //after setOutputFormat()
 //        if(isAudio) mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);  //after setOutputFormat()

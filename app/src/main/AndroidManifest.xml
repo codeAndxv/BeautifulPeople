@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
         android:allowBackup="true"
@@ -30,11 +31,9 @@
             android:name=".service.ScreenRecordService"
             android:foregroundServiceType="mediaProjection"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"/>
 
     </application>
-
-
 
 
 </manifest>
