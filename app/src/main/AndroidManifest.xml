@@ -33,6 +33,11 @@
             android:enabled="true"
             android:exported="true"/>
 
+        <service android:name=".service.ShooterService"
+            android:foregroundServiceType="mediaProjection"
+            android:enabled="true"
+            android:exported="true"/>
+
     </application>
 
 
