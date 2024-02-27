@@ -47,7 +47,6 @@ public class ShooterService extends Service {
 
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
-    private OnShotListener mOnShotListener;
     private int mHeight;
     private int mWidth;
     private int mResultCode;
@@ -57,9 +56,6 @@ public class ShooterService extends Service {
 
     }
 
-    private Handler handler;
-    private Runnable runnable;
-
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -68,55 +64,34 @@ public class ShooterService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        handler = new Handler();
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                // 打印Toast消息
-                startScreenShot(new OnShotListener() {
-                    @Override
-                    public void onFinish(String path) {
 
-                    }
-
-                    @Override
-                    public void onError() {
-
-                    }
-                });
-                // 每两秒后再次执行
-                handler.postDelayed(this, 2000);
-            }
-        };
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         createNotificationChannel();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mResultCode = intent.getIntExtra("code", -1);
-            mResultData = intent.getParcelableExtra("data");
+        mResultCode = intent.getIntExtra("code", -1);
+        mResultData = intent.getParcelableExtra("data");
 
-            mMediaProjection = getMediaProjectionManager().getMediaProjection(mResultCode, mResultData);
+        mMediaProjection = getMediaProjectionManager().getMediaProjection(mResultCode, mResultData);
 
-            WindowManager window = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-            Display mDisplay = window.getDefaultDisplay();
-            DisplayMetrics metrics = new DisplayMetrics();
-            mDisplay.getRealMetrics(metrics);
-            mWidth = metrics.widthPixels;//size.x;
-            mHeight = metrics.heightPixels;//size.y;
+        WindowManager window = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        Display mDisplay = window.getDefaultDisplay();
+        DisplayMetrics metrics = new DisplayMetrics();
+        mDisplay.getRealMetrics(metrics);
+        mWidth = metrics.widthPixels;//size.x;
+        mHeight = metrics.heightPixels;//size.y;
 
-            mImageReader = ImageReader.newInstance(
-                    mWidth,
-                    mHeight,
-                    PixelFormat.RGBA_8888,//this is necessary to equal buffer format in #copyPixelsFromBuffer.
-                    3);
+        mImageReader = ImageReader.newInstance(
+                mWidth,
+                mHeight,
+                PixelFormat.RGBA_8888,//this is necessary to equal buffer format in #copyPixelsFromBuffer.
+                2);
 
-            virtualDisplay();
-        }
+        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
 
-        handler.post(runnable);
+        virtualDisplay();
 
         return START_STICKY;
     }
@@ -155,41 +130,39 @@ public class ShooterService extends Service {
         return ((MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE));
     }
 
+    private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            try (Image image = reader.acquireLatestImage()) {
+                if (image != null) {
+                    new SaveTask().doInBackground(image);
+                    image.close();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
 
-    public void startScreenShot(OnShotListener onShotListener) {
-        mOnShotListener = onShotListener;
-
-        Image image = mImageReader.acquireLatestImage();
-        new SaveTask().doInBackground(image);
+        }
     }
 
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void virtualDisplay() {
 
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(
-                "screen-mirror",
+                "ScreenShot",
                 mWidth,
                 mHeight,
                 Resources.getSystem().getDisplayMetrics().densityDpi,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION,
                 mImageReader.getSurface(), null, null
         );
-
     }
-
-
 
     public class SaveTask extends AsyncTask<Image, Void, Bitmap> {
 
-        @TargetApi(Build.VERSION_CODES.KITKAT)
         @Override
         protected Bitmap doInBackground(Image... params) {
-
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-            Date curDate = new Date(System.currentTimeMillis());
-            String curTime = formatter.format(curDate).replace(" ", "");
 
             if (params == null || params.length < 1 || params[0] == null) {
                 return null;
@@ -214,10 +187,8 @@ public class ShooterService extends Service {
             File fileImage = null;
             if (bitmap != null) {
                 try {
-
-
-                    fileImage = new File(getSavedPath() + "/" + curTime + ".png");
-
+                    String name = String.valueOf(System.currentTimeMillis());
+                    fileImage = new File(getSavedPath() + "/" + name + ".png");
                     if (!fileImage.exists()) {
                         fileImage.createNewFile();
                     }
@@ -230,14 +201,9 @@ public class ShooterService extends Service {
 
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                    if (mOnShotListener != null) mOnShotListener.onError();
-                    release();
                     return null;
                 } catch (IOException e) {
                     e.printStackTrace();
-                    if (mOnShotListener != null) mOnShotListener.onError();
-
-                    release();
                     return null;
                 }
             }
@@ -250,13 +216,7 @@ public class ShooterService extends Service {
                 mVirtualDisplay.release();
             }
             if (mMediaProjection != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    mMediaProjection.stop();
-                }
-            }
-
-            if (mOnShotListener != null) {
-                mOnShotListener.onFinish(getSavedPath() + "/" + curTime + ".png");
+                mMediaProjection.stop();
             }
 
             return null;
@@ -270,7 +230,6 @@ public class ShooterService extends Service {
     }
 
 
-
     private String getSavedPath() {
         String directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/" + "record";
         File directoryFile = new File(directory);
@@ -281,7 +240,6 @@ public class ShooterService extends Service {
     }
 
 
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -289,7 +247,7 @@ public class ShooterService extends Service {
     }
 
 
-    public void release(){
+    public void release() {
         if (mVirtualDisplay != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 mVirtualDisplay.release();
@@ -300,12 +258,6 @@ public class ShooterService extends Service {
                 mMediaProjection.stop();
             }
         }
-        // 移除Runnable，防止内存泄漏
-        handler.removeCallbacks(runnable);
     }
 
-    public interface OnShotListener {
-        void onFinish(String path);
-        void onError();
-    }
 }
