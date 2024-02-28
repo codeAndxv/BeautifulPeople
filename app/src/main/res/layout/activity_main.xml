@@ -1,44 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-    <Button
-        android:id="@+id/selectDirectoryButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@id/bt_start"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="40dp"
-        android:text="选择目录"
-        android:onClick="selectDirectory" />
+    android:orientation="horizontal">
 
 
     <Button
-        android:id="@+id/bt_start"
+        android:id="@+id/startButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="开始录制"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@id/bt_stop"
-        app:layout_constraintTop_toBottomOf="@id/selectDirectoryButton"
-        android:layout_marginTop="40dp"
-        android:onClick="startRecorder"/>
-
+        android:text="@string/start_recording" />
 
     <Button
-        android:id="@+id/bt_stop"
+        android:id="@+id/stopButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="停止录制"
-        app:layout_constraintLeft_toRightOf="@id/bt_start"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/selectDirectoryButton"
-        android:layout_marginTop="40dp"
-        android:onClick="stopRecorder"/>
+        android:text="@string/stop_recording" />
 
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

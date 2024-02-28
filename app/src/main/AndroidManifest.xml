@@ -2,24 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.BeautifulPeople"
-        tools:targetApi="31">
+        android:theme="@style/Theme.BeautifulPeople">
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".ScreenCaptureActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,16 +23,8 @@
         </activity>
 
         <service
-            android:name=".service.ScreenRecordService"
-            android:foregroundServiceType="mediaProjection"
-            android:enabled="true"
-            android:exported="true"/>
-
-        <service android:name=".service.ShooterService"
-            android:foregroundServiceType="mediaProjection"
-            android:enabled="true"
-            android:exported="true"/>
-
+            android:name=".ScreenCaptureService"
+            android:foregroundServiceType="mediaProjection" />
     </application>
 
 </manifest>
