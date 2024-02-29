@@ -1,4 +1,4 @@
-package com.dudu.beautifulpeople;
+package com.dudu.beautifulpeople.utils;
 
 
 import android.annotation.TargetApi;
@@ -11,6 +11,8 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.Pair;
+
+import com.dudu.beautifulpeople.R;
 
 
 public class NotificationUtils {

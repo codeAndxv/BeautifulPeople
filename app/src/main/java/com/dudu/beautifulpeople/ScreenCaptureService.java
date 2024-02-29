@@ -25,13 +25,14 @@ import android.view.WindowManager;
 
 import androidx.core.util.Pair;
 
+import com.dudu.beautifulpeople.utils.GlobalVariables;
+import com.dudu.beautifulpeople.utils.NotificationUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Objects;
 
@@ -102,17 +103,25 @@ public class ScreenCaptureService extends Service {
                     bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
                     bitmap.copyPixelsFromBuffer(buffer);
 
-                    // write bitmap to a file
-                    // 获取当前时间
-                    Date now = new Date();
-                    // 定义时间格式化器，精确到毫秒
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
-                    // 格式化时间为字符串
-                    String formattedDateTime = formatter.format(now);
-                    fos = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime + ".png");
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    // 检测人脸并剪切
+                    Bitmap cropBitmap = GlobalVariables.modelHelper.detectAndCropPerson(bitmap);
+                    if (cropBitmap!=null) {
 
-                    Log.e(TAG, "captured image: " + "myscreen_" + formattedDateTime + ".png");
+                        // write bitmap to a file
+                        // 获取当前时间
+                        Date now = new Date();
+                        // 定义时间格式化器，精确到毫秒
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+                        // 格式化时间为字符串
+                        String formattedDateTime = formatter.format(now);
+                        fos = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime + ".png");
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+
+                        fos = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime+ "_crop" + ".png");
+                        cropBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+
+                        Log.e(TAG, "captured image: " + "myscreen_" + formattedDateTime + "_crop" + ".png");
+                    }
                 }
 
             } catch (Exception e) {
