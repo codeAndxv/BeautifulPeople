@@ -59,6 +59,9 @@ public class MTCNN {
             square_limit(boxes, bitmap.getWidth(), bitmap.getHeight());
 
             //【3】ONet
+            if (boxes.size()==0) {
+                return boxes;
+            }
             boxes = oNet(bitmap, boxes);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();

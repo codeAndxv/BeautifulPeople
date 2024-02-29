@@ -31,7 +31,7 @@ public class ModelHelper {
         // 检测出人脸数据
         long start = System.currentTimeMillis();
         // 只有这句代码检测人脸，下面都是根据Box在图片中裁减出人脸
-        Vector<Box> boxes1 = mtcnn.detectFaces(bitmapTemp1, bitmapTemp1.getWidth() / 5);
+        Vector<Box> boxes1 = mtcnn.detectFaces(bitmapTemp1, bitmapTemp1.getWidth() / 10);
         long end = System.currentTimeMillis();
 //        resultTextView.setText("人脸检测前向传播耗时：" + (end - start));
         if (boxes1.size() == 0) {
@@ -43,7 +43,11 @@ public class ModelHelper {
 
         // 人脸矫正
         bitmapTemp1 = Align.face_align(bitmapTemp1, box1.landmark);
-        boxes1 = mtcnn.detectFaces(bitmapTemp1, bitmapTemp1.getWidth() / 5);
+        boxes1 = mtcnn.detectFaces(bitmapTemp1, bitmapTemp1.getWidth() / 10);
+        // 矫正完，可能又不存在人脸了？
+        if (boxes1.size() == 0) {
+            return null;
+        }
         box1 = boxes1.get(0);
 
         box1.toSquareShape();

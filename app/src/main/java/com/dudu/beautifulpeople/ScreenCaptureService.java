@@ -89,7 +89,8 @@ public class ScreenCaptureService extends Service {
         @Override
         public void onImageAvailable(ImageReader reader) {
 
-            FileOutputStream fos = null;
+            FileOutputStream fos1 = null;
+            FileOutputStream fos2 = null;
             Bitmap bitmap = null;
             try (Image image = mImageReader.acquireLatestImage()) {
                 if (image != null) {
@@ -114,11 +115,11 @@ public class ScreenCaptureService extends Service {
                         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
                         // 格式化时间为字符串
                         String formattedDateTime = formatter.format(now);
-                        fos = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime + ".png");
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                        fos1 = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime + ".png");
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos1);
 
-                        fos = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime+ "_crop" + ".png");
-                        cropBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                        fos2 = new FileOutputStream(mStoreDir + "/myscreen_" + formattedDateTime+ "_crop" + ".png");
+                        cropBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos2);
 
                         Log.e(TAG, "captured image: " + "myscreen_" + formattedDateTime + "_crop" + ".png");
                     }
@@ -127,14 +128,20 @@ public class ScreenCaptureService extends Service {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                if (fos != null) {
+                if (fos1 != null) {
                     try {
-                        fos.close();
+                        fos1.close();
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     }
                 }
-
+                if (fos2 != null) {
+                    try {
+                        fos2.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
                 if (bitmap != null) {
                     bitmap.recycle();
                 }
